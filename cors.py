@@ -158,19 +158,20 @@ async def keys(request, origins):
         )
         CURRENT_KEY = content
         KEY_LAST_SET = time.time()
+        del_keys = [
+            'Vary',
+            'Content-Encoding',
+            'Transfer-Encoding',
+            'Content-Length',
+        ]
+        
+        for key in del_keys:
+            headers.pop(key, None)
 
     current_domain = request.headers.get("origin")
+    if not headers:
+        headers = {}
     headers['Access-Control-Allow-Origin'] = current_domain
-    del_keys = [
-        'Vary',
-        'Content-Encoding',
-        'Transfer-Encoding',
-        'Content-Length',
-    ]
-    
-    for key in del_keys:
-        headers.pop(key, None)
-
     return Response(content=content, headers=headers, media_type="application/octet-stream")
 
 def add_keys(app, origins, setup_with_no_url_param=False):
