@@ -29,12 +29,18 @@ default_port = "5010"
 
 rh = RichHandler(rich_tracebacks=True)
 rh.setFormatter(logging.Formatter("%(message)s"))
-rh.setLevel(logging.INFO)
-logging.basicConfig(
+rh.setLevel(os.getenv("loglevel", logging.DEBUG))
+handlers = [rh]
+
+if os.getenv("store_debug", False):
+    fh = logging.FileHandler("debug.log", mode="w", encoding="utf-8")
+    handlers.append(fh)
+
+setup = logging.basicConfig(
     level="NOTSET",
     format="%(asctime)s %(levelname)s | %(name)s | %(message)s",
     datefmt="[%X]",
-    handlers=[rh, logging.FileHandler("debug.log", mode="w", encoding="utf-8")]
+    handlers=handlers
 )
 logger = logging.getLogger("Main")
 
