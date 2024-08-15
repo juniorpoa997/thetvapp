@@ -1,4 +1,5 @@
-# m3u8_proxy-cors
+# thetvapp-proxy
+*fork of https://github.com/shashstormer/m3u8_proxy-cors*
 
 This is a simple Python proxy server that adds CORS headers to M3U8 playlist files. It allows you to bypass CORS restrictions when playing M3U8 playlists in browsers.
 
@@ -8,12 +9,12 @@ To install and run the server, follow these steps:
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/shashstormer/m3u8_proxy-cors.git
+    git clone https://github.com/gabinfinity/thetvapp.git
     ```
 2. Install dependencies:
     
     ```bash
-    cd m3u8_proxy-cors
+    cd thetvapp
     pip install -r requirements.txt
     ```
 3. Start the server:
@@ -46,7 +47,7 @@ don't put spaces between the headers (you can put it inside the quotes) you migh
 ## Deploying to Vercel
 You can quickly deploy this project to Vercel with the following button:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fshashstormer%2Fm3u8_proxy-cors&project-name=m3u8-proxy-cors&repository-name=m3u8-proxy-cors)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fgabinfinity%2Fthetvapp&project-name=thetvapp-proxy&repository-name=thetvapp)
 
 ## Security issues
 
