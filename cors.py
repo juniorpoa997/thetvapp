@@ -130,6 +130,8 @@ async def keys(request, origins):
     global CURRENT_KEY
     global KEY_LAST_SET
     content = None
+    headers = None
+
     if CURRENT_KEY:
         now = time.time()
         diff = now - KEY_LAST_SET
