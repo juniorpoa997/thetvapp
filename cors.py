@@ -73,7 +73,7 @@ async def cors(request: Request, origins, method="GET") -> Response:
             elif line.startswith('http'):
                 new_content += main_url + requested.safe_sub(line)
             elif line.strip(' '):
-                if '.ts' in line and not os.getenv('proxy_ts', False):
+                if '.ts' in line and not os.getenv('proxy_ts', True):
                     new_content += requested.host \
                     + '/'.join(str(requested.path).split('?')[0].split('/')[:-1]) \
                     + '/' + line
@@ -158,7 +158,20 @@ async def keys(request, origins):
         )
         CURRENT_KEY = content
         KEY_LAST_SET = time.time()
-    return Response(content=content, media_type="application/octet-stream")
+
+    current_domain = request.headers.get("origin")
+    headers['Access-Control-Allow-Origin'] = current_domain
+    del_keys = [
+        'Vary',
+        'Content-Encoding',
+        'Transfer-Encoding',
+        'Content-Length',
+    ]
+    
+    for key in del_keys:
+        headers.pop(key, None)
+
+    return Response(content=content, headers=headers, media_type="application/octet-stream")
 
 def add_keys(app, origins, setup_with_no_url_param=False):
     key_path = os.getenv('key_url', '/key')
