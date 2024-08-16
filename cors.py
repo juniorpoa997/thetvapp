@@ -1,14 +1,13 @@
-import base64
-import time
+import re
 import json
 import os
-import re
+import time
 from fastapi import Request, Response, Cookie
 from fastapi.responses import RedirectResponse
 from request_helper import Requester
 from typing import Annotated
 
-URI_MATCH = re.compile(r"URI=\"([^\"]+)\"")
+URI_MATCH = re.compile(r'URI="([^"]+)"')
 
 async def cors(request: Request, origins, method="GET") -> Response:
     global URI_MATCH
@@ -21,14 +20,14 @@ async def cors(request: Request, origins, method="GET") -> Response:
         return Response("No url passed!", status_code=404)
     file_type = request.query_params.get('type')
     requested = Requester(str(request.url))
-    # Assegure-se de que o esquema seja HTTPS
-    main_url = "https://" + requested.host + requested.path + "?url="
+    # Garantir que o esquema https:// seja preservado corretamente
+    main_url = f"https://{requested.host}{requested.path}?url="
     key_url = main_url.replace("/cors", "/key")
     referer = requested.base_headers.get("referer")
     if not referer:
-        return Response("No referrer passed!", status_code=404)
+        return Response("No referer passed!", status_code=404)
     url = requested.query_params.get("url")
-    url += "?" + requested.query_string(requested.remaining_params)
+    url += f"?{requested.query_string(requested.remaining_params)}"
     requested = Requester(url)
     hdrs = request.headers.mutablecopy()
     hdrs["Accept-Encoding"] = ""
@@ -61,32 +60,25 @@ async def cors(request: Request, origins, method="GET") -> Response:
                 if not uri_match:
                     print("No uri in key def")
                     continue
-                new_content += URI_MATCH.sub(lambda x: f"URI=\"{key_url+requested.safe_sub(x.group(1))+f'&referer={referer}'}\"", line)
+                new_content += URI_MATCH.sub(lambda x: f'URI="{key_url}{requested.safe_sub(x.group(1))}&referer={referer}"', line)
             elif line.startswith("#"):
                 new_content += line
             elif line.startswith('/'):
-                new_content += main_url + requested.safe_sub(requested.host + line)
+                # Garantir que a URL tenha o esquema https:// correto
+                new_content += f"https://{requested.host}{line}"
             elif line.startswith('http'):
-                new_content += main_url + requested.safe_sub(line)
+                new_content += line
             elif line.strip(' '):
-                if '.ts' in line and not os.getenv('proxy_ts', True):
-                    new_content += "https://" + requested.host + '/'.join(str(requested.path).split('?')[0].split('/')[:-1]) + '/' + line
-                else:
-                    new_content += main_url + requested.safe_sub(
-                        requested.host +
-                        '/'.join(str(requested.path).split('?')[0].split('/')[:-1]) +
-                        '/' +
-                        requested.safe_sub(line) 
-                    ) + f'&referer={referer}'
+                new_content += f"https://{requested.host}/{'/'.join(str(requested.path).split('?')[0].split('/')[:-1])}/{line}"
             new_content += "\n"
         content = new_content
 
     if "location" in headers:
         if headers["location"].startswith("/"):
-            headers["location"] = "https://" + requested.host + headers["location"]
-        headers["location"] = main_url + headers["location"] + f"&referer={referer}"
-    
-    # Adicione o cabeçalho Strict-Transport-Security
+            headers["location"] = f"https://{requested.host}{headers['location']}"
+        headers["location"] = f"{main_url}{headers['location']}&referer={referer}"
+
+    # Adiciona o cabeçalho Strict-Transport-Security
     headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
 
     resp = Response(content, code, headers=headers)
@@ -139,7 +131,7 @@ async def keys(request, origins):
     if CURRENT_KEY:
         now = time.time()
         diff = now - KEY_LAST_SET
-        if diff < 600:  # 10 mins
+        if diff < 600:  # 10 minutos
             content = CURRENT_KEY
 
     if not content:
