@@ -88,4 +88,4 @@ add_cors(app, allowed_origins, allow_no_url_param_also)
 add_keys(app, allowed_origins, allow_no_url_param_also)
 
 if __name__ == '__main__':
-    uvicorn.run(app, host="localhost", port=port)
+    uvicorn.run(app, host="0.0.0.0", port=port)
