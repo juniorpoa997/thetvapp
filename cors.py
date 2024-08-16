@@ -21,7 +21,8 @@ async def cors(request: Request, origins, method="GET") -> Response:
         return Response("No url passed!", status_code=404)
     file_type = request.query_params.get('type')
     requested = Requester(str(request.url))
-    main_url = requested.host + requested.path + "?url="
+    # Assegure-se de que o esquema seja HTTPS
+    main_url = "https://" + requested.host + requested.path + "?url="
     key_url = main_url.replace("/cors", "/key")
     referer = requested.base_headers.get("referer")
     if not referer:
@@ -41,17 +42,12 @@ async def cors(request: Request, origins, method="GET") -> Response:
         additional_params=json.loads(request.get('params', '{}'))
     )
     headers['Access-Control-Allow-Origin'] = current_domain
-    # if "text/html" not in headers.get('Content-Type'):
-    #     headers['Content-Disposition'] = 'attachment; filename="master.m3u8"'
+    # Remover cabeçalhos desnecessários
     del_keys = [
         'Vary',
-        # 'Server',
-        # 'Report-To',
-        # 'NEL',
         'Content-Encoding',
         'Transfer-Encoding',
         'Content-Length',
-        # "Content-Type"
     ]
     for key in del_keys:
         headers.pop(key, None)
@@ -74,9 +70,7 @@ async def cors(request: Request, origins, method="GET") -> Response:
                 new_content += main_url + requested.safe_sub(line)
             elif line.strip(' '):
                 if '.ts' in line and not os.getenv('proxy_ts', True):
-                    new_content += requested.host \
-                    + '/'.join(str(requested.path).split('?')[0].split('/')[:-1]) \
-                    + '/' + line
+                    new_content += "https://" + requested.host + '/'.join(str(requested.path).split('?')[0].split('/')[:-1]) + '/' + line
                 else:
                     new_content += main_url + requested.safe_sub(
                         requested.host +
@@ -86,10 +80,15 @@ async def cors(request: Request, origins, method="GET") -> Response:
                     ) + f'&referer={referer}'
             new_content += "\n"
         content = new_content
+
     if "location" in headers:
         if headers["location"].startswith("/"):
-            headers["location"] = requested.host + headers["location"]
+            headers["location"] = "https://" + requested.host + headers["location"]
         headers["location"] = main_url + headers["location"] + f"&referer={referer}"
+    
+    # Adicione o cabeçalho Strict-Transport-Security
+    headers['Strict-Transport-Security'] = 'max-age=63072000; includeSubDomains; preload'
+
     resp = Response(content, code, headers=headers)
     resp.set_cookie("_last_requested", requested.host, max_age=3600, httponly=True)
     return resp
@@ -140,7 +139,7 @@ async def keys(request, origins):
     if CURRENT_KEY:
         now = time.time()
         diff = now - KEY_LAST_SET
-        if diff < 600: # 10 mins
+        if diff < 600:  # 10 mins
             content = CURRENT_KEY
 
     if not content:
