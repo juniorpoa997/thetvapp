@@ -131,6 +131,11 @@ async def keys(request, origins):
     global KEY_LAST_SET
     content = None
     headers = None
+    current_domain = request.headers.get("origin")
+    if current_domain is None:
+        current_domain = origins
+    if current_domain not in origins.replace(", ", ",").split(",") and origins != "*":
+        return Response("Bad domain!", status_code=404)
 
     if CURRENT_KEY:
         now = time.time()
@@ -170,11 +175,13 @@ async def keys(request, origins):
         for key in del_keys:
             headers.pop(key, None)
 
-    current_domain = request.headers.get("origin")
+    if not CURRENT_KEY:
+        return Response("Failed to get key!", status_code=500)
+
     if not headers:
         headers = {}
     headers['Access-Control-Allow-Origin'] = current_domain
-    return Response(content=content, headers=headers, media_type="application/octet-stream")
+    return Response(content=CURRENT_KEY, headers=headers, media_type="application/octet-stream")
 
 def add_keys(app, origins, setup_with_no_url_param=False):
     key_path = os.getenv('key_url', '/key')
